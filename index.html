@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>本地HTML导航</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 40px 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            color: white;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        }
+
+        .header p {
+            font-size: 1rem;
+            opacity: 0.9;
+        }
+
+        .scan-section {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .scan-btn {
+            padding: 14px 40px;
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: 2px solid rgba(255,255,255,0.5);
+            border-radius: 50px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+
+        .scan-btn:hover {
+            background: rgba(255,255,255,0.3);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+        }
+
+        .scan-btn:active {
+            transform: translateY(0);
+        }
+
+        #folderInput {
+            display: none;
+        }
+
+        .search-box {
+            max-width: 500px;
+            margin: 0 auto 30px;
+            position: relative;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 14px 20px 14px 50px;
+            border: none;
+            border-radius: 50px;
+            font-size: 15px;
+            background: rgba(255,255,255,0.95);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        .search-box input:focus {
+            box-shadow: 0 6px 25px rgba(0,0,0,0.2);
+            transform: translateY(-1px);
+        }
+
+        .search-box::before {
+            content: "🔍";
+            position: absolute;
+            left: 18px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 16px;
+        }
+
+        .tools-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+            gap: 18px;
+        }
+
+        .tool-card {
+            background: white;
+            border-radius: 14px;
+            padding: 22px;
+            text-decoration: none;
+            color: inherit;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            position: relative;
+            overflow: hidden;
+            display: block;
+        }
+
+        .tool-card::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            transform: scaleX(0);
+            transition: transform 0.3s ease;
+        }
+
+        .tool-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+        }
+
+        .tool-card:hover::before {
+            transform: scaleX(1);
+        }
+
+        .tool-icon {
+            font-size: 32px;
+            margin-bottom: 14px;
+        }
+
+        .tool-title {
+            font-size: 17px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 6px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .tool-path {
+            font-size: 12px;
+            color: #999;
+            font-family: monospace;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .tool-card .delete-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(255, 71, 87, 0.1);
+            color: #ff4757;
+            border: none;
+            border-radius: 50%;
+            width: 26px;
+            height: 26px;
+            cursor: pointer;
+            font-size: 13px;
+            opacity: 0;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .tool-card:hover .delete-btn {
+            opacity: 1;
+        }
+
+        .tool-card .delete-btn:hover {
+            background: #ff4757;
+            color: white;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 80px 20px;
+            color: white;
+        }
+
+        .empty-state .icon {
+            font-size: 72px;
+            margin-bottom: 20px;
+            opacity: 0.5;
+        }
+
+        .empty-state h3 {
+            font-size: 1.4rem;
+            margin-bottom: 10px;
+            font-weight: 500;
+        }
+
+        .empty-state p {
+            opacity: 0.7;
+            font-size: 14px;
+        }
+
+        .scanning {
+            text-align: center;
+            color: white;
+            padding: 40px;
+            font-size: 15px;
+        }
+
+        .scanning .spinner {
+            display: inline-block;
+            width: 24px;
+            height: 24px;
+            border: 3px solid rgba(255,255,255,0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin-right: 12px;
+            vertical-align: middle;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 50px;
+            color: rgba(255,255,255,0.6);
+            font-size: 13px;
+        }
+
+        .hint {
+            text-align: center;
+            color: rgba(255,255,255,0.7);
+            font-size: 13px;
+            margin-top: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📂 本地HTML导航</h1>
+            <p>选择文件夹，一键访问所有HTML文件</p>
+        </div>
+
+        <div class="scan-section">
+            <button class="scan-btn" id="scanBtn">📁 选择文件夹自动识别</button>
+            <input type="file" id="folderInput" webkitdirectory directory multiple>
+        </div>
+
+        <div class="search-box">
+            <input type="text" id="searchInput" placeholder="搜索文件名...">
+        </div>
+
+        <div id="contentArea">
+            <div class="empty-state">
+                <div class="icon">📁</div>
+                <h3>还没有扫描</h3>
+                <p>点击上方按钮选择你的HTML工具文件夹</p>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>共 <span id="fileCount">0</span> 个HTML文件</p>
+        </div>
+
+        <div class="hint">
+            💡 数据保存在浏览器本地，下次打开自动恢复
+        </div>
+    </div>
+
+    <script>
+        let tools = [];
+
+        // 从 localStorage 读取
+        function loadTools() {
+            const saved = localStorage.getItem('htmlNavTools');
+            if (saved) {
+                tools = JSON.parse(saved);
+                renderTools();
+            }
+        }
+
+        // 保存到 localStorage
+        function saveTools() {
+            localStorage.setItem('htmlNavTools', JSON.stringify(tools));
+        }
+
+        // 读取HTML文件的title
+        function readHtmlTitle(file) {
+            return new Promise((resolve) => {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const content = e.target.result;
+                    const match = content.match(/<title>(.*?)<\/title>/i);
+                    if (match && match[1].trim()) {
+                        resolve(match[1].trim());
+                    } else {
+                        resolve(null);
+                    }
+                };
+                reader.onerror = () => resolve(null);
+                reader.readAsText(file, 'UTF-8');
+            });
+        }
+
+        // 扫描文件夹
+        document.getElementById('scanBtn').addEventListener('click', () => {
+            document.getElementById('folderInput').click();
+        });
+
+        document.getElementById('folderInput').addEventListener('change', async (e) => {
+            const files = Array.from(e.target.files);
+            const htmlFiles = files.filter(f => f.name.toLowerCase().endsWith('.html'));
+
+            if (htmlFiles.length === 0) {
+                alert('该文件夹中没有找到HTML文件');
+                return;
+            }
+
+            // 显示扫描中
+            document.getElementById('contentArea').innerHTML = `
+                <div class="scanning">
+                    <span class="spinner"></span>
+                    正在扫描 ${htmlFiles.length} 个HTML文件...
+                </div>
+            `;
+
+            const newTools = [];
+            
+            for (let i = 0; i < htmlFiles.length; i++) {
+                const file = htmlFiles[i];
+                let relPath = file.webkitRelativePath || file.name;
+                
+                // 去掉第一层目录（用户选择的文件夹名），因为 index.html 就在该文件夹内
+                if (relPath.includes('/')) {
+                    const parts = relPath.split('/');
+                    parts.shift(); // 去掉第一层
+                    relPath = parts.join('/');
+                }
+                
+                // 跳过导航页自身
+                if (file.name === 'index.html' && !relPath.includes('/')) {
+                    continue;
+                }
+
+                // 尝试读取title
+                let title = null;
+                try {
+                    title = await readHtmlTitle(file);
+                } catch (err) {}
+
+                const fileName = file.name.replace(/\.html?$/i, '');
+                
+                newTools.push({
+                    name: title || fileName,
+                    file: relPath,
+                    icon: '📄'
+                });
+            }
+
+            // 按文件名排序
+            newTools.sort((a, b) => a.name.localeCompare(b.name, 'zh-CN'));
+
+            tools = newTools;
+            saveTools();
+            renderTools();
+        });
+
+        // 渲染工具列表
+        function renderTools() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const contentArea = document.getElementById('contentArea');
+
+            let filtered = tools;
+            if (searchTerm) {
+                filtered = tools.filter(t => 
+                    t.name.toLowerCase().includes(searchTerm) ||
+                    t.file.toLowerCase().includes(searchTerm)
+                );
+            }
+
+            document.getElementById('fileCount').textContent = filtered.length;
+
+            if (filtered.length === 0) {
+                contentArea.innerHTML = `
+                    <div class="empty-state">
+                        <div class="icon">🔍</div>
+                        <h3>没有找到匹配的文件</h3>
+                        <p>试试其他关键词</p>
+                    </div>
+                `;
+                return;
+            }
+
+            contentArea.innerHTML = `<div class="tools-grid">${
+                filtered.map((tool, index) => `
+                    <a href="${tool.file}" class="tool-card" target="_blank">
+                        <button class="delete-btn" data-index="${tools.indexOf(tool)}" title="移除">✕</button>
+                        <div class="tool-icon">${tool.icon || '📄'}</div>
+                        <div class="tool-title" title="${tool.name}">${tool.name}</div>
+                        <div class="tool-path" title="${tool.file}">${tool.file}</div>
+                    </a>
+                `).join('')
+            }</div>`;
+
+            // 绑定删除按钮
+            contentArea.querySelectorAll('.delete-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const index = parseInt(btn.dataset.index);
+                    tools.splice(index, 1);
+                    saveTools();
+                    renderTools();
+                });
+            });
+        }
+
+        // 搜索
+        document.getElementById('searchInput').addEventListener('input', renderTools);
+
+        // 初始化
+        loadTools();
+    </script>
+</body>
+</html>
